@@ -38,7 +38,7 @@ class Mux {
     return this;
   }
 
-  serve(req: Request) {
+  handle(req: Request) {
     for (const handler of this.handlers) {
       if (req.method !== handler[0]) {
         continue;

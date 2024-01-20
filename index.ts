@@ -4,7 +4,7 @@ const mux = createApp();
 const server = Bun.serve({
   async fetch(req) {
     console.log(`${req.method} ${req.url}`);
-    return mux.serve(req);
+    return mux.handle(req);
   },
 });
 
