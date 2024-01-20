@@ -1,6 +1,14 @@
-import { createApp } from "./app";
+import { signupPage, signup, login, admin, logout, index } from "./api";
+import { Mux } from "./mux";
 
-const mux = createApp();
+const mux = new Mux()
+  .get("/signup", signupPage)
+  .post("/signup", signup)
+  .post("/login", login)
+  .get("/admin", admin)
+  .get("/logout", logout)
+  .get("/", index);
+
 const server = Bun.serve({
   async fetch(req) {
     console.log(`${req.method} ${req.url}`);

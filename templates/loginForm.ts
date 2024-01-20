@@ -22,7 +22,10 @@ const html = `<div class="form-container">
 </form>
 </div>`;
 
-const css = `.form-container {
+const css = `
+.form-container {
+  margin-top: 24px;
+  width: min(100%, 60ch);
   padding: 16px 32px;
   border-radius: 5px;
 }
@@ -35,6 +38,7 @@ const css = `.form-container {
 }
 
 form .actions {
+  align-items: center;
   display: flex;
   justify-content: space-between;
   margin-top: 24px;

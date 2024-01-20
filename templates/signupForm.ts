@@ -1,4 +1,5 @@
-const html = `<form id="signup" hx-post="/signup">
+const html = `<div class="form-container">
+  <form id="signup" hx-post="/signup">
   <div class="input-container">
     <label for="username">user</label>
     <input name="username" type="text" autocomplete="off" required />
@@ -15,12 +16,14 @@ const html = `<form id="signup" hx-post="/signup">
   <div class="actions">
     <button type="submit">Signup</button>
   </div>
-  </form>`;
+  </form>
+  </div>`;
 
-const css = `.form-container {
+const css = `
+    .form-container {
+      margin-top: 24px;
+      width: min(100%, 60ch);
       padding: 16px 32px;
-      border: solid 2px #f2f2f2;
-      border-radius: 5px;
     }
 
     .input-container {
@@ -31,6 +34,7 @@ const css = `.form-container {
     }
 
     form .actions {
+      align-items: center;
       display: flex;
       justify-content: space-between;
       margin-top: 24px;
