@@ -1,19 +1,16 @@
 type Handler = [
   method: "GET" | "PUT" | "POST" | "PATCH" | "DELETE",
   pattern: string,
-  fn: (res: Request) => Response | Promise<Response>
+  fn: (req: Request) => Response | Promise<Response>
 ];
 
+// TODO: nested mux?
+// TODO: MuxRequest? could be helpful to provide some useful responding capabilities
 class Mux {
   handlers!: Handler[];
 
   constructor() {
     this.handlers = [];
-  }
-
-  withHandlers(handlers: Handler[]) {
-    this.handlers = handlers;
-    return this;
   }
 
   get(pattern: Handler[1], fn: Handler[2]) {

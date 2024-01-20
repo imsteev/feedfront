@@ -95,3 +95,20 @@ export function page(props: { html: string; css?: string }) {
     </body>
   </html>`;
 }
+
+export function escapeHTML(s: string): string {
+  // https://owasp.deteact.com/cheat/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html#rule-1---html-escape-before-inserting-untrusted-data-into-html-element-content
+  // & --> &amp;
+  // < --> &lt;
+  // > --> &gt;
+  // " --> &quot;
+  // ' --> &#x27;
+  // / --> &#x2F;
+  return s
+    .replaceAll("&", "&amp")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#x27;")
+    .replaceAll("/", "&#x2F;");
+}
