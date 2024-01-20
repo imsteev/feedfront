@@ -1,4 +1,4 @@
-export const signupFormHTML = `<form id="signup" hx-post="/signup">
+const html = `<form id="signup" hx-post="/signup">
   <div class="input-container">
     <label for="username">user</label>
     <input name="username" type="text" autocomplete="off" required />
@@ -17,7 +17,7 @@ export const signupFormHTML = `<form id="signup" hx-post="/signup">
   </div>
   </form>`;
 
-export const signupFormCSS = `.form-container {
+const css = `.form-container {
       padding: 16px 32px;
       border: solid 2px #f2f2f2;
       border-radius: 5px;
@@ -39,3 +39,5 @@ export const signupFormCSS = `.form-container {
     form .errors {
       color: red;
     }`;
+
+export default { html, css };

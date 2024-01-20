@@ -1,4 +1,4 @@
-export const loginFormHTML = `<div class="form-container">
+const html = `<div class="form-container">
 <form id="login-form" hx-post="/login">
   <div class="input-container">
     <label for="username">user</label>
@@ -22,7 +22,7 @@ export const loginFormHTML = `<div class="form-container">
 </form>
 </div>`;
 
-export const loginFormCSS = `.form-container {
+const css = `.form-container {
   padding: 16px 32px;
   border-radius: 5px;
 }
@@ -43,3 +43,5 @@ form .actions {
 form .errors {
   color: red;
 }`;
+
+export default { html, css };

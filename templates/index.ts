@@ -1,4 +1,4 @@
-// TODO: escape variables
+// NOTE: make sure to escape untrusted user inputs!
 export function page(props: { html: string; css?: string }) {
   return `<!DOCTYPE html>
   <html>

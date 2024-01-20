@@ -1,6 +1,6 @@
-import { loginFormHTML, loginFormCSS } from "./pages/login";
-import { signupFormHTML, signupFormCSS } from "./pages/signup";
-import { escapeHTML, page } from "./pages/template";
+import loginForm from "./templates/loginForm";
+import signupForm from "./templates/signupForm";
+import { escapeHTML, page } from "./templates";
 
 // CHANGEME: query something more durable
 const users: Record<string, string> = {};
@@ -9,7 +9,7 @@ export const index = (req: Request) => {
   if (req.headers.get("cookie")) {
     return redirect(req, "/admin");
   }
-  return new Response(page({ html: loginFormHTML, css: loginFormCSS }), {
+  return new Response(page(loginForm), {
     headers: { "Content-Type": "text/html" },
   });
 };
@@ -81,7 +81,7 @@ export const login = async (req: Request) => {
 };
 
 export const signupPage = () =>
-  new Response(page({ html: signupFormHTML, css: signupFormCSS }), {
+  new Response(page(signupForm), {
     headers: { "Content-Type": "text/html" },
   });
 
@@ -123,9 +123,9 @@ export const signup = async (req: Request) => {
   resp.headers.set("Set-Cookie", `username=${username}`);
   return resp;
 };
+
 // If the request is HTMX-aware, this will set the HX-Redirect header.
 // Otherwise sets the standard Location header.
-// TODO: create a new type MuxRequest and make this a method on that instead?
 function redirect(req: Request, newLocation: string) {
   const isHtmx = req.headers.get("HX-Request") === "true";
   return new Response(null, {
