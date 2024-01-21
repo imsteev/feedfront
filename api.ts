@@ -2,8 +2,11 @@ import loginForm from "./templates/loginForm";
 import signupForm from "./templates/signupForm";
 import { escapeHTML, page } from "./templates";
 
-// CHANGEME: query something more durable
+// CHANGEME
 const users: Record<string, string> = {};
+const session: Record<string, string> = {};
+
+const SESSION_KEY = "id";
 
 export const index = (req: Request) => {
   if (req.headers.get("cookie")) {
@@ -15,9 +18,7 @@ export const index = (req: Request) => {
 };
 
 export const logout = (req: Request) => {
-  const cookieless = redirect(req, "/");
-  cookieless.headers.set("Set-Cookie", "username=; Max-Age=0");
-  return cookieless;
+  return expireCookie(redirect(req, "/"));
 };
 
 export const admin = (req: Request) => {
@@ -26,11 +27,10 @@ export const admin = (req: Request) => {
     return redirect(req, "/");
   }
   const username = cooki.split("=")[1];
-  if (!(username in users)) {
-    const cookieless = redirect(req, "/");
-    cookieless.headers.set("Set-Cookie", "username=; Max-Age=0");
-    return cookieless;
+  if (!(username in session)) {
+    return expireCookie(redirect(req, "/"));
   }
+
   return new Response(
     page({
       html: `<h1>Hello, ${escapeHTML(
@@ -76,7 +76,11 @@ export const login = async (req: Request) => {
   }
 
   const resp = redirect(req, "/admin");
-  resp.headers.set("Set-Cookie", `username=${username}`);
+  const sesh = newSession(username);
+  resp.headers.set(
+    "Set-Cookie",
+    `${SESSION_KEY}=${sesh}; Secure; HttpOnly; SameSite=Strict; Max-Age=86400`
+  );
   return resp;
 };
 
@@ -120,7 +124,11 @@ export const signup = async (req: Request) => {
   users[username] = hashed;
 
   const resp = redirect(req, "/admin");
-  resp.headers.set("Set-Cookie", `username=${username}`);
+  const sesh = newSession(username);
+  resp.headers.set(
+    "Set-Cookie",
+    `${SESSION_KEY}=${sesh}; Secure; HttpOnly; SameSite=Strict; Max-Age=86400`
+  );
   return resp;
 };
 
@@ -134,4 +142,17 @@ function redirect(req: Request, newLocation: string) {
       ? { "HX-Redirect": newLocation }
       : { Location: newLocation },
   });
+}
+
+function expireCookie(res: Response): Response {
+  res.headers.set("Set-Cookie", `${SESSION_KEY}=; Max-Age=0`);
+  return res;
+}
+
+// TODO: is this concurrent safe
+// TODO: ID needs to be more entropic + unpredictable
+function newSession(username: string): string {
+  const hash = Bun.hash.cityHash64(username).toString();
+  session[hash] = username;
+  return hash;
 }

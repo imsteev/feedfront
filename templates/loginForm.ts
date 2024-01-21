@@ -25,7 +25,7 @@ const html = `<div class="form-container">
 const css = `
 .form-container {
   margin-top: 24px;
-  width: min(100%, 60ch);
+  width: min(100%, 40ch);
   padding: 16px 32px;
   border-radius: 5px;
 }
