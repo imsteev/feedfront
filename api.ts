@@ -4,7 +4,7 @@ import { escapeHTML, page } from "./templates";
 
 // CHANGEME
 const users: Record<string, string> = {};
-const session: Record<string, string> = {};
+const session: Record<string, string> = {}; // ID -> username
 
 const SESSION_KEY = "id";
 
@@ -26,15 +26,15 @@ export const admin = (req: Request) => {
   if (!cooki) {
     return redirect(req, "/");
   }
-  const username = cooki.split("=")[1];
-  if (!(username in session)) {
+  const seshID = cooki.split("=")[1];
+  if (!(seshID in session)) {
     return expireCookie(redirect(req, "/"));
   }
 
   return new Response(
     page({
       html: `<h1>Hello, ${escapeHTML(
-        username
+        session[seshID]
       )}!</h1><button hx-get="/logout">Logout</a>`,
     }),
     {
