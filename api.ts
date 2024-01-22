@@ -1,6 +1,7 @@
 import loginForm from "./templates/loginForm";
 import signupForm from "./templates/signupForm";
 import { escapeHTML, page } from "./templates";
+import { db } from "./db";
 
 // CHANGEME
 const users: Record<string, string> = {};
@@ -76,11 +77,7 @@ export const login = async (req: Request) => {
   }
 
   const resp = redirect(req, "/admin");
-  const sesh = newSession(username);
-  resp.headers.set(
-    "Set-Cookie",
-    `${SESSION_KEY}=${sesh}; Secure; HttpOnly; SameSite=Strict; Max-Age=86400`
-  );
+  resp.headers.set("Set-Cookie", `${newSessionCookie(username)}`);
   return resp;
 };
 
@@ -111,24 +108,17 @@ export const signup = async (req: Request) => {
   }
 
   const username = `${form.get("username")}`;
-  if (`${form.get("username")}` in users) {
-    return new Response("username already taken", {
-      headers: {
-        "HX-Retarget": "form .errors",
-        "HX-Reswap": "innerHTML",
-      },
-    });
-  }
 
   const hashed = await Bun.password.hash(pw1);
+  db.prepare(`INSERT INTO users (username, password) VALUES ($u, $p)`).run({
+    $u: username,
+    $p: pw1,
+  });
+
   users[username] = hashed;
 
   const resp = redirect(req, "/admin");
-  const sesh = newSession(username);
-  resp.headers.set(
-    "Set-Cookie",
-    `${SESSION_KEY}=${sesh}; Secure; HttpOnly; SameSite=Strict; Max-Age=86400`
-  );
+  resp.headers.set("Set-Cookie", `${newSessionCookie(username)}`);
   return resp;
 };
 
@@ -149,10 +139,8 @@ function expireCookie(res: Response): Response {
   return res;
 }
 
-// TODO: is this concurrent safe
-// TODO: ID needs to be more entropic + unpredictable
-function newSession(username: string): string {
-  const hash = Bun.hash.cityHash64(username).toString();
-  session[hash] = username;
-  return hash;
+function newSessionCookie(username: string): string {
+  const id = crypto.randomUUID();
+  session[id] = username;
+  return `${SESSION_KEY}=${id}; Secure; HttpOnly; SameSite=Strict; Max-Age=86400`;
 }
