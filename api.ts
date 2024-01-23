@@ -3,10 +3,11 @@ import signupForm from "./templates/signupForm";
 import { escapeHTML as xHTML, page } from "./templates";
 import { createUser, db, getUserFromSession } from "./db";
 
-const SESSION_KEY = "id";
-const SESSION_MAX_AGE_SECONDS = 60;
+// TODO: CSRF PROTECTION
 
-// 1 /* day */ * 24 /* hours */ * 60 /* minutes */ * 60; /* seconds */
+const SESSION_KEY = "id";
+const SESSION_MAX_AGE_SECONDS =
+  1 /* day */ * 24 /* hours */ * 60 /* minutes */ * 60; /* seconds */
 
 export const index = (req: Request) => {
   if (req.headers.get("cookie")) {
@@ -18,7 +19,7 @@ export const index = (req: Request) => {
 };
 
 export const logout = (req: Request) => {
-  return expireCookie(redirect(req, "/"));
+  return expireCookie(req);
 };
 
 export const admin = (req: Request) => {
@@ -27,12 +28,10 @@ export const admin = (req: Request) => {
     return redirect(req, "/");
   }
   const sid = cooki.split("=")[1];
-
   const user = getUserFromSession(sid);
   if (!user) {
-    return expireCookie(redirect(req, "/"));
+    return expireCookie(req);
   }
-
   return new Response(
     page({
       html: `<h1>Hello, ${xHTML(
@@ -55,37 +54,18 @@ export const admin = (req: Request) => {
 
 export const login = async (req: Request) => {
   const form = await req.formData();
-
-  // make sure user exists
   const username = form.get("username")?.toString() || "";
   const inputPw = form.get("password")?.toString() || "";
-
   const user = await accessUser(username, inputPw);
-  if (user) {
-    const resp = redirect(req, "/admin");
-    resp.headers.set("Set-Cookie", `${newSessionCookie(user.id)}`);
-    return resp;
+  if (!user) {
+    redirect(req, "/");
   }
-
-  return redirect(req, "/");
+  const resp = redirect(req, "/admin");
+  resp.headers.set("Set-Cookie", `${newSessionCookie(user!.id)}`);
+  return resp;
 };
 
-async function accessUser(username: string, plaintextPw: string) {
-  const user = db
-    .query<{ id: number; username: string; password: string }, { $u: string }>(
-      `SELECT * FROM users WHERE username = $u;`
-    )
-    .get({
-      $u: username,
-    });
-  if (user && (await Bun.password.verify(plaintextPw, user.password))) {
-    return user;
-  }
-
-  return null;
-}
-
-export const signupPage = () =>
+export const signupPage = (_: Request) =>
   new Response(page(signupForm), {
     headers: { "Content-Type": "text/html" },
   });
@@ -96,20 +76,25 @@ export const signup = async (req: Request) => {
   const pw2 = form.get("password2")?.toString() || "";
   const username = form.get("username")?.toString() ?? "";
 
-  if (pw1.length < 3) {
-    return new Response("password must be at least 3 characters long", {
-      headers: {
-        "HX-Retarget": "form .errors",
-        "HX-Reswap": "innerHTML",
-      },
-    });
+  function validate(): string | true {
+    if (pw1.length < 3) {
+      return "password must be at least 3 characters long";
+    }
+    if (pw1 !== pw2) {
+      return "passwords don't match";
+    }
+    return true;
   }
-  if (pw1 !== pw2) {
-    return new Response("passwords don't match", {
-      headers: {
-        "HX-Retarget": "form .errors",
-        "HX-Reswap": "innerHTML",
-      },
+
+  const passedOrError = validate();
+  const hxErrorsHeaders = {
+    "HX-Retarget": "form .errors",
+    "HX-Reswap": "innerHTML",
+  };
+
+  if (passedOrError !== true) {
+    return new Response(passedOrError, {
+      headers: hxErrorsHeaders,
     });
   }
 
@@ -127,16 +112,14 @@ export const signup = async (req: Request) => {
   }
 
   return new Response("authentication failed", {
-    headers: {
-      "HX-Retarget": "form .errors",
-      "HX-Reswap": "innerHTML",
-    },
+    headers: hxErrorsHeaders,
   });
 };
 
-// If the request is HTMX-aware, this will set the HX-Redirect header.
-// Otherwise sets the standard Location header.
-function redirect(req: Request, newLocation: string) {
+// response helpers
+
+// HTMX-aware redirection. HTMX requests always have an identifying header
+function redirect(req: Request, newLocation: string): Response {
   const isHtmx = req.headers.get("HX-Request") === "true";
   return new Response(null, {
     status: 302,
@@ -146,9 +129,28 @@ function redirect(req: Request, newLocation: string) {
   });
 }
 
-function expireCookie(res: Response): Response {
+function expireCookie(req: Request): Response {
+  const res = redirect(req, "/");
   res.headers.set("Set-Cookie", `${SESSION_KEY}=; Max-Age=0`);
   return res;
+}
+
+// db helpers
+type user = { id: number; username: string; password: string };
+async function accessUser(
+  username: string,
+  plaintextPw: string
+): Promise<user | null> {
+  const user = db
+    .query<user, { $u: string }>(`SELECT * FROM users WHERE username = $u;`)
+    .get({
+      $u: username,
+    });
+  if (user && (await Bun.password.verify(plaintextPw, user.password))) {
+    return user;
+  }
+
+  return null;
 }
 
 function newSessionCookie(userID: number): string {

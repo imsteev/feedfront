@@ -6,24 +6,24 @@ export const db = new Database(process.env.SQLITE_DB || ":memory:", {
 
 // run migrations
 
-db.query(
+db.run("PRAGMA foreign_keys = ON;");
+db.run(
   `CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);`
-).run();
-
-//
-db.query(
+  );`
+);
+db.run(
   `CREATE TABLE IF NOT EXISTS sessions (
     id STRING PRIMARY KEY,
     user_id INTEGER NOT NULL UNIQUE,
     expires_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);`
-).run();
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users
+  );`
+);
 
 export function createUser(username: string, hashedPw: string) {
   db.prepare(`INSERT INTO users (username, password) VALUES ($u, $p)`).run({
