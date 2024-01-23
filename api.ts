@@ -1,7 +1,7 @@
 import loginForm from "./templates/loginForm";
 import signupForm from "./templates/signupForm";
-import { escapeHTML, page } from "./templates";
-import { db } from "./db";
+import { escapeHTML as xHTML, page } from "./templates";
+import { createUser, db, getUserFromSession } from "./db";
 
 // CHANGEME
 const users: Record<string, string> = {};
@@ -27,16 +27,20 @@ export const admin = (req: Request) => {
   if (!cooki) {
     return redirect(req, "/");
   }
-  const seshID = cooki.split("=")[1];
-  if (!(seshID in session)) {
+  const sid = cooki.split("=")[1];
+
+  const user = getUserFromSession(sid);
+  if (!user) {
     return expireCookie(redirect(req, "/"));
   }
 
   return new Response(
     page({
-      html: `<h1>Hello, ${escapeHTML(
-        session[seshID]
-      )}!</h1><button hx-get="/logout">Logout</a>`,
+      html: `<h1>Hello, ${xHTML(
+        user.username
+      )}!</h1><p>Account created: ${xHTML(
+        user.created_at
+      )}</p><button hx-get="/logout">Logout</a>`,
     }),
     {
       headers: {
@@ -55,31 +59,32 @@ export const login = async (req: Request) => {
 
   // make sure user exists
   const username = form.get("username")?.toString() || "";
-  if (!(username in users)) {
-    return new Response("user doesn't exist", {
-      headers: {
-        "HX-Retarget": "form .errors",
-        "HX-Reswap": "innerHTML",
-      },
-    });
-  }
-
-  // verify password
   const inputPw = form.get("password")?.toString() || "";
-  const actualPw = users[username];
-  if (!(await Bun.password.verify(inputPw, actualPw))) {
-    return new Response("incorrect password", {
-      headers: {
-        "HX-Retarget": "form .errors",
-        "HX-Reswap": "innerHTML",
-      },
-    });
+
+  const user = await accessUser(username, inputPw);
+  if (user) {
+    const resp = redirect(req, "/admin");
+    resp.headers.set("Set-Cookie", `${newSessionCookie(user.id)}`);
+    return resp;
   }
 
-  const resp = redirect(req, "/admin");
-  resp.headers.set("Set-Cookie", `${newSessionCookie(username)}`);
-  return resp;
+  return redirect(req, "/");
 };
+
+async function accessUser(username: string, plaintextPw: string) {
+  const user = db
+    .query<{ id: number; username: string; password: string }, { $u: string }>(
+      `SELECT * FROM users WHERE username = $u;`
+    )
+    .get({
+      $u: username,
+    });
+  if (user && (await Bun.password.verify(plaintextPw, user.password))) {
+    return user;
+  }
+
+  return null;
+}
 
 export const signupPage = () =>
   new Response(page(signupForm), {
@@ -108,18 +113,26 @@ export const signup = async (req: Request) => {
   }
 
   const username = `${form.get("username")}`;
-
   const hashed = await Bun.password.hash(pw1);
-  db.prepare(`INSERT INTO users (username, password) VALUES ($u, $p)`).run({
-    $u: username,
-    $p: pw1,
+
+  try {
+    createUser(username, pw1);
+    const user = await accessUser(username, pw1);
+    if (user) {
+      const resp = redirect(req, "/admin");
+      resp.headers.set("Set-Cookie", `${newSessionCookie(user.id)}`);
+      return resp;
+    }
+  } catch (e) {
+    console.log(`ERROR CREATING USER: ${e}`);
+  }
+
+  return new Response("authentication failed", {
+    headers: {
+      "HX-Retarget": "form .errors",
+      "HX-Reswap": "innerHTML",
+    },
   });
-
-  users[username] = hashed;
-
-  const resp = redirect(req, "/admin");
-  resp.headers.set("Set-Cookie", `${newSessionCookie(username)}`);
-  return resp;
 };
 
 // If the request is HTMX-aware, this will set the HX-Redirect header.
@@ -139,8 +152,29 @@ function expireCookie(res: Response): Response {
   return res;
 }
 
-function newSessionCookie(username: string): string {
-  const id = crypto.randomUUID();
-  session[id] = username;
-  return `${SESSION_KEY}=${id}; Secure; HttpOnly; SameSite=Strict; Max-Age=86400`;
+function newSessionCookie(userID: number): string {
+  const sID = crypto.randomUUID();
+
+  const now = new Date();
+  const maxAgeMs =
+    // 1 day
+    24 /* hours */ *
+    60 /* minutes */ *
+    60 /* seconds */ *
+    1000; /* milliseconds */
+
+  const expiresAt = new Date();
+  expiresAt.setTime(now.getTime() + maxAgeMs);
+
+  db.prepare(
+    `INSERT INTO sessions (id, user_id, expires_at) VALUES ($id, $userID, $expiresAt)
+    ON CONFLICT(user_id)
+    DO UPDATE SET id = excluded.id, expires_at = excluded.expires_at`
+  ).run({
+    $id: sID,
+    $userID: userID,
+    $expiresAt: Math.round(expiresAt.getTime() / 1000), // seconds since epoch
+  });
+
+  return `${SESSION_KEY}=${sID}; Secure; HttpOnly; SameSite=Strict; Expires=${expiresAt.toUTCString()}`;
 }

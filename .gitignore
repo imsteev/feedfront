@@ -1,4 +1,8 @@
-# Based on https://raw.githubusercontent.com/github/gitignore/main/Node.gitignore
+# DEFINED BY ME
+*.db
+
+
+# EVERYTHING BELOW IS based on https://raw.githubusercontent.com/github/gitignore/main/Node.gitignore
 
 # Logs
 
@@ -10,7 +14,7 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
-# Caches 
+# Caches
 
 .cache
 
