@@ -3,11 +3,10 @@ import signupForm from "./templates/signupForm";
 import { escapeHTML as xHTML, page } from "./templates";
 import { createUser, db, getUserFromSession } from "./db";
 
-// CHANGEME
-const users: Record<string, string> = {};
-const session: Record<string, string> = {}; // ID -> username
-
 const SESSION_KEY = "id";
+const SESSION_MAX_AGE_SECONDS = 60;
+
+// 1 /* day */ * 24 /* hours */ * 60 /* minutes */ * 60; /* seconds */
 
 export const index = (req: Request) => {
   if (req.headers.get("cookie")) {
@@ -95,6 +94,8 @@ export const signup = async (req: Request) => {
   const form = await req.formData();
   const pw1 = form.get("password1")?.toString() || "";
   const pw2 = form.get("password2")?.toString() || "";
+  const username = form.get("username")?.toString() ?? "";
+
   if (pw1.length < 3) {
     return new Response("password must be at least 3 characters long", {
       headers: {
@@ -112,11 +113,9 @@ export const signup = async (req: Request) => {
     });
   }
 
-  const username = `${form.get("username")}`;
-  const hashed = await Bun.password.hash(pw1);
-
   try {
-    createUser(username, pw1);
+    const hashed = await Bun.password.hash(pw1);
+    createUser(username, hashed);
     const user = await accessUser(username, pw1);
     if (user) {
       const resp = redirect(req, "/admin");
@@ -153,28 +152,18 @@ function expireCookie(res: Response): Response {
 }
 
 function newSessionCookie(userID: number): string {
-  const sID = crypto.randomUUID();
-
-  const now = new Date();
-  const maxAgeMs =
-    // 1 day
-    24 /* hours */ *
-    60 /* minutes */ *
-    60 /* seconds */ *
-    1000; /* milliseconds */
-
-  const expiresAt = new Date();
-  expiresAt.setTime(now.getTime() + maxAgeMs);
+  const sid = crypto.randomUUID();
 
   db.prepare(
     `INSERT INTO sessions (id, user_id, expires_at) VALUES ($id, $userID, $expiresAt)
     ON CONFLICT(user_id)
     DO UPDATE SET id = excluded.id, expires_at = excluded.expires_at`
   ).run({
-    $id: sID,
+    $id: sid,
     $userID: userID,
-    $expiresAt: Math.round(expiresAt.getTime() / 1000), // seconds since epoch
+    $expiresAt:
+      Math.round(new Date().getTime() / 1000) + SESSION_MAX_AGE_SECONDS, // seconds since UTC epoch
   });
 
-  return `${SESSION_KEY}=${sID}; Secure; HttpOnly; SameSite=Strict; Expires=${expiresAt.toUTCString()}`;
+  return `${SESSION_KEY}=${sid}; Secure; HttpOnly; SameSite=Strict; Max-Age=${SESSION_MAX_AGE_SECONDS}`;
 }
