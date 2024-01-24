@@ -7,7 +7,7 @@ export const db = new Database(process.env.SQLITE_DB || ":memory:", {
   create: true,
 });
 
-type User = {
+export type User = {
   id: number;
   username: string;
   password: string;

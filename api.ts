@@ -1,6 +1,6 @@
 import loginForm from "./templates/loginForm";
 import signupForm from "./templates/signupForm";
-import { escapeHTML as xHTML, page } from "./templates";
+import { page } from "./templates";
 import {
   SESSION_MAX_AGE_SECONDS,
   accessUser,
@@ -8,6 +8,7 @@ import {
   accessUserFromSession,
   newSession,
 } from "./db";
+import adminView from "./templates/admin";
 
 const SESSION_KEY = "id";
 
@@ -44,9 +45,8 @@ export const admin = (req: Request) => {
   }
 
   const res = newPage({
-    html: `<h1>Hello, ${xHTML(user.username)}!</h1><p>Account created: ${xHTML(
-      user.created_at
-    )}</p><button hx-get="/logout">Logout</a>`,
+    html: adminView.render(user),
+    css: adminView.css,
   });
 
   // IMPORTANT: Set cache-control to ensure that clients don't use cached pages.
