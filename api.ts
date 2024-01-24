@@ -1,21 +1,31 @@
 import loginForm from "./templates/loginForm";
 import signupForm from "./templates/signupForm";
 import { escapeHTML as xHTML, page } from "./templates";
-import { createUser, db, getUserFromSession } from "./db";
-
-// TODO: CSRF PROTECTION
+import {
+  SESSION_MAX_AGE_SECONDS,
+  accessUser,
+  createUser,
+  accessUserFromSession,
+  newSession,
+} from "./db";
 
 const SESSION_KEY = "id";
-const SESSION_MAX_AGE_SECONDS =
-  1 /* day */ * 24 /* hours */ * 60 /* minutes */ * 60; /* seconds */
+
+const HX_ERRORS_HEADERS = {
+  "HX-Retarget": "form .errors",
+  "HX-Reswap": "innerHTML",
+};
 
 export const index = (req: Request) => {
-  if (req.headers.get("cookie")) {
-    return redirect(req, "/admin");
+  const cooki = req.headers.get("cookie");
+  if (cooki) {
+    const sid = cooki.split("=")[1];
+    const user = accessUserFromSession(sid);
+    if (user) {
+      return redirect(req, "/admin");
+    }
   }
-  return new Response(page(loginForm), {
-    headers: { "Content-Type": "text/html" },
-  });
+  return newPage(loginForm);
 };
 
 export const logout = (req: Request) => {
@@ -28,28 +38,21 @@ export const admin = (req: Request) => {
     return redirect(req, "/");
   }
   const sid = cooki.split("=")[1];
-  const user = getUserFromSession(sid);
+  const user = accessUserFromSession(sid);
   if (!user) {
     return expireCookie(req);
   }
-  return new Response(
-    page({
-      html: `<h1>Hello, ${xHTML(
-        user.username
-      )}!</h1><p>Account created: ${xHTML(
-        user.created_at
-      )}</p><button hx-get="/logout">Logout</a>`,
-    }),
-    {
-      headers: {
-        // IMPORTANT: Set cache-control to ensure that clients don't
-        // used cached pages after logging out.
-        // TODO: middleware to generalize this to every authenticated page?
-        "Cache-Control": "no-cache, no-store, max-age=0",
-        "Content-Type": "text/html",
-      },
-    }
-  );
+
+  const res = newPage({
+    html: `<h1>Hello, ${xHTML(user.username)}!</h1><p>Account created: ${xHTML(
+      user.created_at
+    )}</p><button hx-get="/logout">Logout</a>`,
+  });
+
+  // IMPORTANT: Set cache-control to ensure that clients don't use cached pages.
+  res.headers.set("Cache-Control", "no-cache, no-store, max-age=0");
+
+  return res;
 };
 
 export const login = async (req: Request) => {
@@ -58,17 +61,18 @@ export const login = async (req: Request) => {
   const inputPw = form.get("password")?.toString() || "";
   const user = await accessUser(username, inputPw);
   if (!user) {
-    redirect(req, "/");
+    return new Response("authentication failed", {
+      headers: HX_ERRORS_HEADERS,
+    });
   }
   const resp = redirect(req, "/admin");
-  resp.headers.set("Set-Cookie", `${newSessionCookie(user!.id)}`);
+  const session = establishSession(user!.id);
+  console.log({ session });
+  resp.headers.set("Set-Cookie", session.cookie);
   return resp;
 };
 
-export const signupPage = (_: Request) =>
-  new Response(page(signupForm), {
-    headers: { "Content-Type": "text/html" },
-  });
+export const signupPage = (_: Request) => newPage(signupForm);
 
 export const signup = async (req: Request) => {
   const form = await req.formData();
@@ -76,7 +80,7 @@ export const signup = async (req: Request) => {
   const pw2 = form.get("password2")?.toString() || "";
   const username = form.get("username")?.toString() ?? "";
 
-  function validate(): string | true {
+  function _validate(): string | true {
     if (pw1.length < 3) {
       return "password must be at least 3 characters long";
     }
@@ -86,25 +90,20 @@ export const signup = async (req: Request) => {
     return true;
   }
 
-  const passedOrError = validate();
-  const hxErrorsHeaders = {
-    "HX-Retarget": "form .errors",
-    "HX-Reswap": "innerHTML",
-  };
+  const passedOrError = _validate();
 
   if (passedOrError !== true) {
     return new Response(passedOrError, {
-      headers: hxErrorsHeaders,
+      headers: HX_ERRORS_HEADERS,
     });
   }
 
   try {
-    const hashed = await Bun.password.hash(pw1);
-    createUser(username, hashed);
-    const user = await accessUser(username, pw1);
+    const user = await createUser(username, pw1);
     if (user) {
       const resp = redirect(req, "/admin");
-      resp.headers.set("Set-Cookie", `${newSessionCookie(user.id)}`);
+      const session = establishSession(user!.id);
+      resp.headers.set("Set-Cookie", session.cookie);
       return resp;
     }
   } catch (e) {
@@ -112,11 +111,16 @@ export const signup = async (req: Request) => {
   }
 
   return new Response("authentication failed", {
-    headers: hxErrorsHeaders,
+    headers: HX_ERRORS_HEADERS,
   });
 };
 
 // response helpers
+function newPage(content: { html: string; css?: string }): Response {
+  return new Response(page(content), {
+    headers: { "Content-Type": "text/html" },
+  });
+}
 
 // HTMX-aware redirection. HTMX requests always have an identifying header
 function redirect(req: Request, newLocation: string): Response {
@@ -135,37 +139,13 @@ function expireCookie(req: Request): Response {
   return res;
 }
 
-// db helpers
-type user = { id: number; username: string; password: string };
-async function accessUser(
-  username: string,
-  plaintextPw: string
-): Promise<user | null> {
-  const user = db
-    .query<user, { $u: string }>(`SELECT * FROM users WHERE username = $u;`)
-    .get({
-      $u: username,
-    });
-  if (user && (await Bun.password.verify(plaintextPw, user.password))) {
-    return user;
-  }
-
-  return null;
-}
-
-function newSessionCookie(userID: number): string {
-  const sid = crypto.randomUUID();
-
-  db.prepare(
-    `INSERT INTO sessions (id, user_id, expires_at) VALUES ($id, $userID, $expiresAt)
-    ON CONFLICT(user_id)
-    DO UPDATE SET id = excluded.id, expires_at = excluded.expires_at`
-  ).run({
-    $id: sid,
-    $userID: userID,
-    $expiresAt:
-      Math.round(new Date().getTime() / 1000) + SESSION_MAX_AGE_SECONDS, // seconds since UTC epoch
-  });
-
-  return `${SESSION_KEY}=${sid}; Secure; HttpOnly; SameSite=Strict; Max-Age=${SESSION_MAX_AGE_SECONDS}`;
+function establishSession(userID: number): {
+  cookie: string;
+  csrf: string;
+} {
+  const session = newSession(userID);
+  return {
+    cookie: `${SESSION_KEY}=${session?.id}; Secure; HttpOnly; SameSite=Strict; Max-Age=${SESSION_MAX_AGE_SECONDS}`,
+    csrf: session?.csrf ?? "",
+  };
 }
