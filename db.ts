@@ -18,6 +18,8 @@ export type User = {
 
 /* MIGRATIONS */
 db.run("PRAGMA foreign_keys = ON;");
+
+// users table
 db.run(
   `CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
@@ -26,11 +28,14 @@ db.run(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );`
 );
+
+// sessions table
+// multiple sessions per user is ok
 db.run(
   `CREATE TABLE IF NOT EXISTS sessions (
     id STRING PRIMARY KEY,
     csrf STRING NOT NULL UNIQUE,
-    user_id INTEGER NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users
@@ -114,8 +119,6 @@ export function newSession(userID: number): Session | null {
       `
     INSERT INTO sessions (id, csrf, user_id, expires_at)
     VALUES ($id, $csrf, $userID, $expiresAt)
-    ON CONFLICT(user_id) DO UPDATE
-    SET id = excluded.id, csrf=excluded.csrf, expires_at = excluded.expires_at
     RETURNING *;
   `
     )
