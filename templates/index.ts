@@ -57,14 +57,60 @@ export function page(props: { html: string; css?: string }) {
           isolation: isolate;
         }
 
+        /* shareable styles */
+        html {
+          font-size: 1.1rem;
+          padding: 2rem;
+          font-family: Helvetica, sans-serif;
+          margin: auto;
+          width: 80%;
+        }
+
+        a, button {
+          font-size: 0.8rem;
+        }
+
+        button {
+          font-size: 0.9rem;
+          background: #F0F5FE;
+          cursor: pointer;
+          color: #1761E8;
+          border: solid 1px #4580ED;
+        }
+
+        button:hover {
+          opacity: 0.9;
+        }
+
+        /* app-specific */
+        .header {
+          display: flex;
+          width: min(100%, 80ch);
+          padding: 1rem 0.25rem;
+          justify-content: center;
+        }
+
         .page {
-          width: 100%;
-          height: 100vh;
           display: flex;
           flex-direction: column;
           align-items: center;
         }
 
+        .form-container {
+          width: min(100%, 40ch);
+          padding: 16px 32px;
+        }
+
+        form .actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 24px;
+        }
+
+        form .errors {
+          color: red;
+        }
         ${props.css || ""}
       </style>
     </head>

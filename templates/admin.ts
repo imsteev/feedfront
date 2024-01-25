@@ -3,17 +3,25 @@ import { User } from "../db";
 
 export default {
   render(user: User) {
-    return `<div id="admin-container">
-      <h1>${escapeHTML(user.username)}</h1>
-      <h2>Feedback</h2>
+    return `
+    <div class="header">
+      <p>home</p>
+    </div>
+    <nav>
       <button hx-get="/logout">logout</button>
-    </div>`;
+    </nav>
+    <div class="main-content">
+      <p>hello, ${escapeHTML(user.username)}!</p>
+    </div>
+    <div>
+    </div>
+  `;
   },
   css: `
-  #admin-container {
-    padding: 16px;
+  .main-content {
+    margin: 24px 0;
+    width: min(100%, 60ch);
   }
-
 
   `,
 };
