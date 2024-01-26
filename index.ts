@@ -1,11 +1,19 @@
-import { Serve } from "bun";
-import { signupPage, signup, login, admin, logout, index } from "./api";
+import {
+  signupPage,
+  signup,
+  login,
+  admin,
+  logout,
+  index,
+  createPost,
+} from "./api";
 import { Mux } from "./mux";
 
 const mux = new Mux()
   .get("/signup", signupPage)
   .post("/signup", signup)
   .post("/login", login)
+  .post("/posts", createPost)
   .get("/admin", admin)
   .get("/logout", logout)
   .get("/", index);

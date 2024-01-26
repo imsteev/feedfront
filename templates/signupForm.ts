@@ -3,7 +3,7 @@ export default {
   <div class="header">
     <p>signup</p>
   </div>
-  <div class="form-container">
+  <div class="form-container admin-form">
     <form id="signup" hx-post="/signup">
       <div class="input-container">
         <label for="username">user</label>

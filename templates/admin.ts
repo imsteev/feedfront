@@ -1,28 +1,44 @@
 import { escapeHTML } from ".";
 import { User } from "../db";
+import { Post } from "../db/posts";
 
 export default {
-  render(user: User) {
+  render({ user, csrf, posts }: { user: User; csrf: string; posts?: Post[] }) {
     return `
     <div class="header">
-      <p>home</p>
+      <p style="text-transform: uppercase;">${escapeHTML(user.username)}</p>
     </div>
     <nav>
       <button name="logout" hx-get="/logout">logout</button>
     </nav>
     <div class="main-content">
-      <p>hello, ${escapeHTML(user.username)}!</p>
-      <p>this is your space</p>
-      <div class="playground">
-        <button type="button">project 1</button>
-        <button type="button">project 2</button>
-        <button type="button">project 3</button>
-        <button type="button">project 4</button>
-        <button type="button">project 5</button>
-        <img src="https://ih1.redbubble.net/image.2611729366.9977/bg,f8f8f8-flat,750x,075,f-pad,750x1000,f8f8f8.jpg" alt="frog-drawing"/>
+      <form
+        id="new-post"
+        hx-post="/posts"
+        hx-target=".posts"
+        hx-swap="afterbegin"
+        hx-on::after-request="this.reset()"
+      >
+        <input type="hidden" name="csrf" value="${csrf}">
+        <input type="text" name="title" placeholder="Title">
+        <textarea name="content"></textarea>
+        <div class="actions">
+          <button type="submit" hx-trigger="keyup[metaKey&&Enter]">create</button>
+        </div>
+      </form>
+      <div class="posts">
+        ${
+          posts
+            ?.map(
+              (p) => `
+        <div class="post">
+          ${p.title ? `<h3>${escapeHTML(p.title)}</h3>` : ""}
+          ${escapeHTML(p.content)}
+        </div>`
+            )
+            ?.join("\n") || ""
+        }
       </div>
-    </div>
-    <div>
     </div>
   `;
   },
@@ -31,7 +47,6 @@ export default {
     margin: 24px 0;
     width: min(100%, 60ch);
   }
-
 
   .playground > * {
     margin: 8px 0;
@@ -42,6 +57,38 @@ export default {
     border-color: #F464FF;
   }
 
+  form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin: 24px 0 8px;
+  }
 
+  form .actions {
+    justify-content: flex-end;
+  }
+
+  .posts > * {
+    margin: 16px 0;
+  }
+
+  .post {
+    white-space: pre-wrap;
+  }
+
+  label[for="content"] {
+    color: lightgray;
+    cursor: pointer;
+  }
+
+  input[name="title"] {
+    border: 0;
+    outline-width: 0;
+  }
+
+  textarea {
+    margin: 6px 0;
+    padding: 6px;
+  }
   `,
 };

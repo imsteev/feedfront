@@ -14,6 +14,7 @@ export type User = {
   created_at: string;
 
   session_expires_at: string;
+  session_csrf: string;
 };
 
 /* MIGRATIONS */
@@ -41,22 +42,16 @@ db.run(
     FOREIGN KEY (user_id) REFERENCES users
   );`
 );
-/* END MIGRATIONS */
 
-export async function createUser(
-  username: string,
-  plaintextPw: string
-): Promise<User | null> {
-  const hashed = await Bun.password.hash(plaintextPw);
-  return db
-    .prepare<User, any>(
-      `INSERT INTO users (username, password) VALUES ($u, $p) RETURNING *`
-    )
-    .get({
-      $u: username,
-      $p: hashed,
-    });
-}
+db.run(`CREATE TABLE IF NOT EXISTS posts (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    title TEXT,
+    content TEXT
+)`);
+/* END MIGRATIONS */
 
 /**
  * This will fetch a user from a session, and only return the user if the
@@ -67,7 +62,7 @@ export async function createUser(
 export function accessUserFromSession(sid: string): User | null {
   const user = db
     .query<User, any>(
-      `select users.*, sessions.expires_at as session_expires_at, sessions.id as session_id from users join sessions on sessions.user_id = users.id where sessions.id = $sid;`
+      `select users.*, sessions.expires_at as session_expires_at, sessions.csrf as session_csrf from users join sessions on sessions.user_id = users.id where sessions.id = $sid;`
     )
     .get({
       $sid: sid,

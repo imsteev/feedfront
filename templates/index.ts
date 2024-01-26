@@ -97,8 +97,11 @@ export function page(props: { html: string; css?: string }) {
         }
 
         .form-container {
-          width: min(100%, 40ch);
           padding: 16px 32px;
+        }
+
+        .form-container.admin-form {
+          width: min(100%, 40ch);
         }
 
         form .actions {

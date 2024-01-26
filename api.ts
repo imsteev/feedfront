@@ -1,13 +1,16 @@
 import loginForm from "./templates/loginForm";
 import signupForm from "./templates/signupForm";
-import { page } from "./templates";
+import { page, escapeHTML } from "./templates";
 import {
   SESSION_MAX_AGE_SECONDS,
   accessUser,
-  createUser,
   accessUserFromSession,
   newSession,
 } from "./db";
+
+import posts from "./db/posts";
+import users from "./db/users";
+
 import adminView from "./templates/admin";
 
 const SESSION_KEY = "id";
@@ -44,8 +47,9 @@ export const admin = (req: Request) => {
     return expireCookie(req);
   }
 
+  const ps = posts.getPosts(user.id);
   const res = newPage({
-    html: adminView.render(user),
+    html: adminView.render({ user, posts: ps, csrf: user.session_csrf }),
     css: adminView.css,
   });
 
@@ -53,6 +57,35 @@ export const admin = (req: Request) => {
   res.headers.set("Cache-Control", "no-cache, no-store, max-age=0");
 
   return res;
+};
+
+export const createPost = async (req: Request) => {
+  const cooki = req.headers.get("cookie") ?? "";
+  if (!cooki) {
+    return expireCookie(req);
+  }
+
+  const sid = cooki.split("=")[1];
+  const user = accessUserFromSession(sid);
+  if (!user) {
+    return expireCookie(req);
+  }
+
+  const form = await req.formData();
+  const csrf = form.get("csrf")?.toString();
+  const title = form.get("title")?.toString() ?? "";
+  const content = form.get("content")?.toString() ?? "";
+
+  if (csrf !== user.session_csrf) {
+    return new Response("invalid request", { headers: HX_ERRORS_HEADERS });
+  }
+
+  posts.createPost(user.id, content, title);
+  const ps = posts.getPosts(user.id);
+  return new Response(`<div class="post">
+    <h3>${escapeHTML(title)}</h3>
+    ${escapeHTML(content)}
+  </div>`);
 };
 
 export const login = async (req: Request) => {
@@ -99,7 +132,7 @@ export const signup = async (req: Request) => {
   }
 
   try {
-    const user = await createUser(username, pw1);
+    const user = await users.createUser(username, pw1);
     if (user) {
       const resp = redirect(req, "/admin");
       const session = establishSession(user!.id);
