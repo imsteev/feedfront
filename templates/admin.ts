@@ -9,7 +9,7 @@ export default {
       <p style="text-transform: uppercase;">${escapeHTML(user.username)}</p>
     </div>
     <nav>
-      <button name="logout" hx-get="/logout">logout</button>
+      <button hx-get="/logout">logout</button>
     </nav>
     <div class="main-content">
       <form
@@ -72,10 +72,6 @@ export default {
     margin: 16px 0;
   }
 
-  .post {
-    white-space: pre-wrap;
-  }
-
   label[for="content"] {
     color: lightgray;
     cursor: pointer;
@@ -89,6 +85,7 @@ export default {
   textarea {
     margin: 6px 0;
     padding: 6px;
+    resize: none;
   }
   `,
 };
