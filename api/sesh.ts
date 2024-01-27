@@ -8,10 +8,17 @@ function establishSession(userID: number): {
   cookie: string;
   csrf: string;
 } {
-  const session = newSession(userID);
+  const sid = crypto.randomUUID();
+  const csrf = crypto.randomUUID();
+  session.createSession(
+    sid,
+    csrf,
+    userID,
+    Math.round(new Date().getTime() / 1000) + SESSION_MAX_AGE_SECONDS
+  );
   return {
-    cookie: `${SIDKEY}=${session?.id}; Secure; HttpOnly; SameSite=Strict; Max-Age=${SESSION_MAX_AGE_SECONDS}`,
-    csrf: session?.csrf ?? "",
+    cookie: `${SIDKEY}=${sid}; Secure; HttpOnly; SameSite=Strict; Max-Age=${SESSION_MAX_AGE_SECONDS}`,
+    csrf: csrf ?? "",
   };
 }
 
@@ -43,20 +50,8 @@ function accessUser(sid: string): User | null {
   return user;
 }
 
-function newSession(userID: number): Session | null {
-  const sid = crypto.randomUUID();
-  const csrf = crypto.randomUUID();
-  return session.createSession(
-    sid,
-    csrf,
-    userID,
-    Math.round(new Date().getTime() / 1000) + SESSION_MAX_AGE_SECONDS
-  );
-}
-
 export default {
   SIDKEY,
-  newSession,
   establishSession,
   accessUser,
 };
