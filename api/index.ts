@@ -1,5 +1,5 @@
-import utils from "./utils";
 import sessionMgr from "./sesh";
+import { expireCookie, html, redirect } from "./utils";
 
 import { escapeHTML, page } from "../templates";
 import adminView from "../templates/admin";
@@ -21,29 +21,29 @@ export const index = (req: Request) => {
     const sid = cooki.split("=")[1];
     const user = sessionMgr.accessUser(sid);
     if (user) {
-      return utils.redirect(req, "/admin");
+      return redirect(req, "/admin");
     }
   }
-  return utils.html(page(loginForm));
+  return html(page(loginForm));
 };
 
 export const logout = (req: Request) => {
-  return utils.expireCookie(req, sessionMgr.SIDKEY);
+  return expireCookie(req, sessionMgr.SIDKEY);
 };
 
 export const admin = (req: Request) => {
   const cooki = req.headers.get("cookie");
   if (!cooki) {
-    return utils.redirect(req, "/");
+    return redirect(req, "/");
   }
   const sid = cooki.split("=")[1];
   const user = sessionMgr.accessUser(sid);
   if (!user) {
-    return utils.expireCookie(req, sessionMgr.SIDKEY);
+    return expireCookie(req, sessionMgr.SIDKEY);
   }
 
   const ps = posts.getPosts(user.id);
-  const res = utils.html(
+  const res = html(
     page({
       html: adminView.render({ user, posts: ps, csrf: user.session_csrf }),
       css: adminView.css,
@@ -59,13 +59,13 @@ export const admin = (req: Request) => {
 export const createPost = async (req: Request) => {
   const cooki = req.headers.get("cookie") ?? "";
   if (!cooki) {
-    return utils.expireCookie(req, sessionMgr.SIDKEY);
+    return expireCookie(req, sessionMgr.SIDKEY);
   }
 
   const sid = cooki.split("=")[1];
   const user = sessionMgr.accessUser(sid);
   if (!user) {
-    return utils.expireCookie(req, sessionMgr.SIDKEY);
+    return expireCookie(req, sessionMgr.SIDKEY);
   }
 
   const form = await req.formData();
@@ -95,14 +95,14 @@ export const login = async (req: Request) => {
       headers: HX_ERRORS_HEADERS,
     });
   }
-  const resp = utils.redirect(req, "/admin");
+  const resp = redirect(req, "/admin");
   const session = sessionMgr.establishSession(user!.id);
   console.log({ session });
   resp.headers.set("Set-Cookie", session.cookie);
   return resp;
 };
 
-export const signupPage = (_: Request) => utils.html(page(signupForm));
+export const signupPage = (_: Request) => html(page(signupForm));
 
 export const signup = async (req: Request) => {
   const form = await req.formData();
@@ -131,7 +131,7 @@ export const signup = async (req: Request) => {
   try {
     const user = await users.createUser(username, pw1);
     if (user) {
-      const resp = utils.redirect(req, "/admin");
+      const resp = redirect(req, "/admin");
       const session = sessionMgr.establishSession(user!.id);
       resp.headers.set("Set-Cookie", session.cookie);
       return resp;
