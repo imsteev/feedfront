@@ -1,4 +1,14 @@
-import { User, db } from ".";
+import { db } from ".";
+
+export type User = {
+  id: number;
+  username: string;
+  password: string;
+  created_at: string;
+
+  session_expires_at: string;
+  session_csrf: string;
+};
 
 export default {
   async createUser(

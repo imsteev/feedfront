@@ -4,16 +4,6 @@ export const db = new Database(process.env.SQLITE_DB || ":memory:", {
   create: true,
 });
 
-export type User = {
-  id: number;
-  username: string;
-  password: string;
-  created_at: string;
-
-  session_expires_at: string;
-  session_csrf: string;
-};
-
 /* MIGRATIONS */
 db.run("PRAGMA foreign_keys = ON;");
 

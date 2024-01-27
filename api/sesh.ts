@@ -1,5 +1,6 @@
-import { User, db } from "../db";
-import session, { Session } from "../db/session";
+import { db } from "../db";
+import session from "../db/session";
+import { User } from "../db/users";
 
 const SIDKEY = "id";
 const SESSION_MAX_AGE_SECONDS = 24 * 60 * 60; // 1 day

@@ -1,15 +1,14 @@
-import loginForm from "../templates/loginForm";
-import signupForm from "../templates/signupForm";
-import { escapeHTML } from "../templates";
-
 import utils from "./utils";
 import sessionMgr from "./sesh";
 
-import posts from "../db/posts";
-import users from "../db/users";
-
+import { escapeHTML, page } from "../templates";
 import adminView from "../templates/admin";
-import { User, db } from "../db";
+import loginForm from "../templates/loginForm";
+import signupForm from "../templates/signupForm";
+
+import { db } from "../db";
+import posts from "../db/posts";
+import users, { User } from "../db/users";
 
 const HX_ERRORS_HEADERS = {
   "HX-Retarget": "form .errors",
@@ -25,7 +24,7 @@ export const index = (req: Request) => {
       return utils.redirect(req, "/admin");
     }
   }
-  return utils.newPage(loginForm);
+  return utils.html(page(loginForm));
 };
 
 export const logout = (req: Request) => {
@@ -44,10 +43,12 @@ export const admin = (req: Request) => {
   }
 
   const ps = posts.getPosts(user.id);
-  const res = utils.newPage({
-    html: adminView.render({ user, posts: ps, csrf: user.session_csrf }),
-    css: adminView.css,
-  });
+  const res = utils.html(
+    page({
+      html: adminView.render({ user, posts: ps, csrf: user.session_csrf }),
+      css: adminView.css,
+    })
+  );
 
   // IMPORTANT: Set cache-control to ensure that clients don't use cached pages.
   res.headers.set("Cache-Control", "no-cache, no-store, max-age=0");
@@ -101,7 +102,7 @@ export const login = async (req: Request) => {
   return resp;
 };
 
-export const signupPage = (_: Request) => utils.newPage(signupForm);
+export const signupPage = (_: Request) => utils.html(page(signupForm));
 
 export const signup = async (req: Request) => {
   const form = await req.formData();

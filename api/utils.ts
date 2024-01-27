@@ -1,8 +1,8 @@
 import { page } from "../templates";
 
 // response helpers
-function newPage(content: { html: string; css?: string }): Response {
-  return new Response(page(content), {
+function html(body: ConstructorParameters<typeof Response>[0]): Response {
+  return new Response(body, {
     headers: { "Content-Type": "text/html" },
   });
 }
@@ -25,7 +25,7 @@ function expireCookie(req: Request, name: string): Response {
 }
 
 export default {
-  newPage,
+  html,
   redirect,
   expireCookie,
 };
