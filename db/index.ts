@@ -1,8 +1,5 @@
 import { Database } from "bun:sqlite";
 
-// 1 day
-export const SESSION_MAX_AGE_SECONDS = 24 * 60 * 60;
-
 export const db = new Database(process.env.SQLITE_DB || ":memory:", {
   create: true,
 });
@@ -52,76 +49,3 @@ db.run(`CREATE TABLE IF NOT EXISTS posts (
     content TEXT
 )`);
 /* END MIGRATIONS */
-
-/**
- * This will fetch a user from a session, and only return the user if the
- * session is valid (i.e, session is not expired yet).
- * @param sid session id
- * @returns
- */
-export function accessUserFromSession(sid: string): User | null {
-  const user = db
-    .query<User, any>(
-      `select users.*, sessions.expires_at as session_expires_at, sessions.csrf as session_csrf from users join sessions on sessions.user_id = users.id where sessions.id = $sid;`
-    )
-    .get({
-      $sid: sid,
-    });
-
-  if (
-    user &&
-    new Date(parseInt(user.session_expires_at) * 1000).getTime() <
-      new Date().getTime()
-  ) {
-    console.log("user session expired");
-    db.prepare(`delete from users where id = $id`).run({ $id: user.id });
-    return null;
-  }
-
-  return user;
-}
-
-export async function accessUser(
-  username: string,
-  plaintextPw: string
-): Promise<User | null> {
-  const user = db
-    .query<User, any>(`SELECT * FROM users WHERE username = $u;`)
-    .get({
-      $u: username,
-    });
-  if (!user) {
-    return null;
-  }
-  if (await Bun.password.verify(plaintextPw, user.password)) {
-    return user;
-  }
-  return null;
-}
-
-type Session = {
-  id: string;
-  csrf: string;
-  user_id: number;
-  expires_at: string;
-};
-
-export function newSession(userID: number): Session | null {
-  const sid = crypto.randomUUID();
-  const csrf = crypto.randomUUID();
-  return db
-    .prepare<Session, any>(
-      `
-    INSERT INTO sessions (id, csrf, user_id, expires_at)
-    VALUES ($id, $csrf, $userID, $expiresAt)
-    RETURNING *;
-  `
-    )
-    .get({
-      $id: sid,
-      $csrf: csrf,
-      $userID: userID,
-      $expiresAt:
-        Math.round(new Date().getTime() / 1000) + SESSION_MAX_AGE_SECONDS, // seconds since UTC epoch
-    });
-}

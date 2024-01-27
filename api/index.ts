@@ -1,19 +1,15 @@
-import loginForm from "./templates/loginForm";
-import signupForm from "./templates/signupForm";
-import { page, escapeHTML } from "./templates";
-import {
-  SESSION_MAX_AGE_SECONDS,
-  accessUser,
-  accessUserFromSession,
-  newSession,
-} from "./db";
+import loginForm from "../templates/loginForm";
+import signupForm from "../templates/signupForm";
+import { escapeHTML } from "../templates";
 
-import posts from "./db/posts";
-import users from "./db/users";
+import utils from "./utils";
+import sessionMgr from "./sesh";
 
-import adminView from "./templates/admin";
+import posts from "../db/posts";
+import users from "../db/users";
 
-const SESSION_KEY = "id";
+import adminView from "../templates/admin";
+import { User, db } from "../db";
 
 const HX_ERRORS_HEADERS = {
   "HX-Retarget": "form .errors",
@@ -24,31 +20,31 @@ export const index = (req: Request) => {
   const cooki = req.headers.get("cookie");
   if (cooki) {
     const sid = cooki.split("=")[1];
-    const user = accessUserFromSession(sid);
+    const user = sessionMgr.accessUser(sid);
     if (user) {
-      return redirect(req, "/admin");
+      return utils.redirect(req, "/admin");
     }
   }
-  return newPage(loginForm);
+  return utils.newPage(loginForm);
 };
 
 export const logout = (req: Request) => {
-  return expireCookie(req);
+  return utils.expireCookie(req, sessionMgr.SIDKEY);
 };
 
 export const admin = (req: Request) => {
   const cooki = req.headers.get("cookie");
   if (!cooki) {
-    return redirect(req, "/");
+    return utils.redirect(req, "/");
   }
   const sid = cooki.split("=")[1];
-  const user = accessUserFromSession(sid);
+  const user = sessionMgr.accessUser(sid);
   if (!user) {
-    return expireCookie(req);
+    return utils.expireCookie(req, sessionMgr.SIDKEY);
   }
 
   const ps = posts.getPosts(user.id);
-  const res = newPage({
+  const res = utils.newPage({
     html: adminView.render({ user, posts: ps, csrf: user.session_csrf }),
     css: adminView.css,
   });
@@ -62,13 +58,13 @@ export const admin = (req: Request) => {
 export const createPost = async (req: Request) => {
   const cooki = req.headers.get("cookie") ?? "";
   if (!cooki) {
-    return expireCookie(req);
+    return utils.expireCookie(req, sessionMgr.SIDKEY);
   }
 
   const sid = cooki.split("=")[1];
-  const user = accessUserFromSession(sid);
+  const user = sessionMgr.accessUser(sid);
   if (!user) {
-    return expireCookie(req);
+    return utils.expireCookie(req, sessionMgr.SIDKEY);
   }
 
   const form = await req.formData();
@@ -98,14 +94,14 @@ export const login = async (req: Request) => {
       headers: HX_ERRORS_HEADERS,
     });
   }
-  const resp = redirect(req, "/admin");
-  const session = establishSession(user!.id);
+  const resp = utils.redirect(req, "/admin");
+  const session = sessionMgr.establishSession(user!.id);
   console.log({ session });
   resp.headers.set("Set-Cookie", session.cookie);
   return resp;
 };
 
-export const signupPage = (_: Request) => newPage(signupForm);
+export const signupPage = (_: Request) => utils.newPage(signupForm);
 
 export const signup = async (req: Request) => {
   const form = await req.formData();
@@ -134,8 +130,8 @@ export const signup = async (req: Request) => {
   try {
     const user = await users.createUser(username, pw1);
     if (user) {
-      const resp = redirect(req, "/admin");
-      const session = establishSession(user!.id);
+      const resp = utils.redirect(req, "/admin");
+      const session = sessionMgr.establishSession(user!.id);
       resp.headers.set("Set-Cookie", session.cookie);
       return resp;
     }
@@ -148,37 +144,20 @@ export const signup = async (req: Request) => {
   });
 };
 
-// response helpers
-function newPage(content: { html: string; css?: string }): Response {
-  return new Response(page(content), {
-    headers: { "Content-Type": "text/html" },
-  });
-}
-
-// HTMX-aware redirection. HTMX requests always have an identifying header
-function redirect(req: Request, newLocation: string): Response {
-  const isHtmx = req.headers.get("HX-Request") === "true";
-  return new Response(null, {
-    status: 302,
-    headers: isHtmx
-      ? { "HX-Redirect": newLocation }
-      : { Location: newLocation },
-  });
-}
-
-function expireCookie(req: Request): Response {
-  const res = redirect(req, "/");
-  res.headers.set("Set-Cookie", `${SESSION_KEY}=; Max-Age=0`);
-  return res;
-}
-
-function establishSession(userID: number): {
-  cookie: string;
-  csrf: string;
-} {
-  const session = newSession(userID);
-  return {
-    cookie: `${SESSION_KEY}=${session?.id}; Secure; HttpOnly; SameSite=Strict; Max-Age=${SESSION_MAX_AGE_SECONDS}`,
-    csrf: session?.csrf ?? "",
-  };
+async function accessUser(
+  username: string,
+  plaintextPw: string
+): Promise<User | null> {
+  const user = db
+    .query<User, any>(`SELECT * FROM users WHERE username = $u;`)
+    .get({
+      $u: username,
+    });
+  if (!user) {
+    return null;
+  }
+  if (await Bun.password.verify(plaintextPw, user.password)) {
+    return user;
+  }
+  return null;
 }
