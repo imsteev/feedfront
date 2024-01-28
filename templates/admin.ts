@@ -34,6 +34,7 @@ export default {
         <div class="post">
           ${p.title ? `<h3>${escapeHTML(p.title)}</h3>` : ""}
           ${escapeHTML(p.content)}
+          <p class="date">${formatPostDate(p.updated_at)}</p>
         </div>`
             )
             ?.join("\n") || ""
@@ -69,7 +70,13 @@ export default {
   }
 
   .posts > * {
-    margin: 16px 0;
+    margin: 32px 0;
+  }
+
+  .post .date {
+    color: gray;
+    margin-top: 4px;
+    font-size: 0.8em;
   }
 
   label[for="content"] {
@@ -89,4 +96,18 @@ export default {
     border-radius: 5px;
   }
   `,
+  formatPostDate,
 };
+
+function formatPostDate(datetime: string) {
+  const date = new Date(datetime);
+
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+
+  const pm = m.toString().padStart(2, "0");
+  const pd = d.toString().padStart(2, "0");
+
+  return `${y}-${pm}-${pd}`;
+}

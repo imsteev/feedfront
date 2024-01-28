@@ -77,6 +77,9 @@ export const createPost = async (req: Request) => {
   return new Response(`<div class="post">
     <h3>${escapeHTML(post?.title)}</h3>
     ${escapeHTML(post?.content)}
+    <p class="date">${escapeHTML(
+      adminView.formatPostDate(post?.updated_at ?? "")
+    )}</p>
   </div>`);
 };
 
