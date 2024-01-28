@@ -117,7 +117,7 @@ export function page(props: { html: string; css?: string }) {
         ${props.css || ""}
       </style>
     </head>
-    <body>
+    <body hx-boost="true">
       <main>
         <div class="page">
           ${props.html}
@@ -127,7 +127,8 @@ export function page(props: { html: string; css?: string }) {
   </html>`;
 }
 
-export function escapeHTML(s: string): string {
+export function escapeHTML(s?: string): string {
+  if (!s) return "";
   // https://owasp.deteact.com/cheat/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html#rule-1---html-escape-before-inserting-untrusted-data-into-html-element-content
   // & --> &amp;
   // < --> &lt;

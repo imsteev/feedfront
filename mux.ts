@@ -1,6 +1,6 @@
 type Handler = [
   method: "GET" | "PUT" | "POST" | "PATCH" | "DELETE",
-  pattern: string,
+  pattern: string | RegExp,
   fn: (req: Request) => Response | Promise<Response>
 ];
 

@@ -9,16 +9,17 @@ export type Post = {
 };
 
 export default {
-  createPost(userID: number, content: string, title = "") {
-    console.log({ userID, content });
-    db.prepare<any, any>(
-      `insert into posts (user_id, content, title) values ($u, $content, $title)`,
-      {
-        $u: userID,
-        $content: content,
-        $title: title,
-      }
-    ).run();
+  createPost(userID: number, content: string, title = ""): Post | null {
+    return db
+      .prepare<Post, any>(
+        `insert into posts (user_id, content, title) values ($u, $content, $title) RETURNING *`,
+        {
+          $u: userID,
+          $content: content,
+          $title: title,
+        }
+      )
+      .get();
   },
   getPosts(userID: number): Post[] {
     return db
@@ -26,5 +27,8 @@ export default {
         `select * from posts where user_id = $u order by updated_at desc`
       )
       .all({ $u: userID });
+  },
+  deletePost(id: number) {
+    db.prepare<Post, any>(`delete from posts where id = $id`).run({ $id: id });
   },
 };

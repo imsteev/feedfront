@@ -1,7 +1,7 @@
 export default {
   html: `
   <div class="header">
-    <p>login</p>
+    <h1>trek</<h1>
   </div>
   <div class="form-container admin-form">
     <form id="login-form" hx-post="/login">

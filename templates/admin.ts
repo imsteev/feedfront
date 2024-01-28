@@ -1,6 +1,6 @@
 import { escapeHTML } from ".";
-import { User } from "../db";
 import { Post } from "../db/posts";
+import { User } from "../db/users";
 
 export default {
   render({ user, csrf, posts }: { user: User; csrf: string; posts?: Post[] }) {
@@ -9,7 +9,7 @@ export default {
       <p style="text-transform: uppercase;">${escapeHTML(user.username)}</p>
     </div>
     <nav>
-      <button hx-get="/logout">logout</button>
+      <a href="#" hx-get="/logout">logout</a>
     </nav>
     <div class="main-content">
       <form
@@ -21,7 +21,7 @@ export default {
       >
         <input type="hidden" name="csrf" value="${csrf}">
         <input type="text" name="title" placeholder="Title">
-        <textarea name="content"></textarea>
+        <textarea name="content" rows="4"></textarea>
         <div class="actions">
           <button type="submit" hx-trigger="keyup[metaKey&&Enter]">create</button>
         </div>
@@ -86,6 +86,7 @@ export default {
     margin: 6px 0;
     padding: 6px;
     resize: none;
+    border-radius: 5px;
   }
   `,
 };

@@ -1,5 +1,5 @@
 import sessionMgr from "./sesh";
-import { expireCookie, html, redirect } from "./utils";
+import { expireCookie, getCookie, html, redirect } from "./utils";
 
 import { escapeHTML, page } from "../templates";
 import adminView from "../templates/admin";
@@ -16,9 +16,8 @@ const HX_ERRORS_HEADERS = {
 };
 
 export const index = (req: Request) => {
-  const cooki = req.headers.get("cookie");
-  if (cooki) {
-    const sid = cooki.split("=")[1];
+  const sid = getCookie(req, sessionMgr.SIDKEY);
+  if (sid) {
     const user = sessionMgr.accessUser(sid);
     if (user) {
       return redirect(req, "/admin");
@@ -32,11 +31,10 @@ export const logout = (req: Request) => {
 };
 
 export const admin = (req: Request) => {
-  const cooki = req.headers.get("cookie");
-  if (!cooki) {
-    return redirect(req, "/");
+  const sid = getCookie(req, sessionMgr.SIDKEY);
+  if (!sid) {
+    return expireCookie(req, sessionMgr.SIDKEY);
   }
-  const sid = cooki.split("=")[1];
   const user = sessionMgr.accessUser(sid);
   if (!user) {
     return expireCookie(req, sessionMgr.SIDKEY);
@@ -57,12 +55,10 @@ export const admin = (req: Request) => {
 };
 
 export const createPost = async (req: Request) => {
-  const cooki = req.headers.get("cookie") ?? "";
-  if (!cooki) {
+  const sid = getCookie(req, sessionMgr.SIDKEY);
+  if (!sid) {
     return expireCookie(req, sessionMgr.SIDKEY);
   }
-
-  const sid = cooki.split("=")[1];
   const user = sessionMgr.accessUser(sid);
   if (!user) {
     return expireCookie(req, sessionMgr.SIDKEY);
@@ -77,11 +73,10 @@ export const createPost = async (req: Request) => {
     return new Response("invalid request", { headers: HX_ERRORS_HEADERS });
   }
 
-  posts.createPost(user.id, content, title);
-  const ps = posts.getPosts(user.id);
+  const post = posts.createPost(user.id, content, title);
   return new Response(`<div class="post">
-    <h3>${escapeHTML(title)}</h3>
-    ${escapeHTML(content)}
+    <h3>${escapeHTML(post?.title)}</h3>
+    ${escapeHTML(post?.content)}
   </div>`);
 };
 
@@ -97,7 +92,6 @@ export const login = async (req: Request) => {
   }
   const resp = redirect(req, "/admin");
   const session = sessionMgr.establishSession(user!.id);
-  console.log({ session });
   resp.headers.set("Set-Cookie", session.cookie);
   return resp;
 };
