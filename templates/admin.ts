@@ -23,7 +23,7 @@ export default {
         <input type="text" name="title" placeholder="Title">
         <textarea name="content" rows="4"></textarea>
         <div class="actions">
-          <button type="submit" hx-trigger="keyup[metaKey&&Enter]">create</button>
+          <button type="submit">create</button>
         </div>
       </form>
       <div class="posts">
