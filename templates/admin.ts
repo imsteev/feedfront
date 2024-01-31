@@ -118,7 +118,6 @@ ${escapeHTML(post?.content)}
 <p class="date">${escapeHTML(formatPostDate(post?.updated_at ?? ""))}</p>
 <a href="#"
   hx-delete="/posts/${post?.id}"
-  hx-confirm="delete this post?"
   hx-target="closest .post">
   delete
 </a>
