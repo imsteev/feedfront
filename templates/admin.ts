@@ -16,6 +16,7 @@ export default {
         id="new-post"
         hx-post="/posts"
         hx-target=".posts"
+        hx-swap="afterbegin"
         hx-on::after-request="this.reset()"
       >
         <input type="hidden" name="csrf" value="${csrf}">
@@ -74,7 +75,7 @@ export default {
 
   .post.htmx-swapping {
     opacity: 0;
-    transition: opacity 1s ease-out;
+    transition: opacity 0.5s ease-out;
   }
 
   label[for="content"] {
@@ -118,7 +119,9 @@ ${escapeHTML(post?.content)}
 <p class="date">${escapeHTML(formatPostDate(post?.updated_at ?? ""))}</p>
 <a href="#"
   hx-delete="/posts/${post?.id}"
-  hx-target="closest .post">
+  hx-target="closest .post"
+  hx-swap="swap:0.8s"
+>
   delete
 </a>
 </div>`;
