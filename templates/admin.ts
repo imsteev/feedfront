@@ -16,37 +16,18 @@ export default {
         id="new-post"
         hx-post="/posts"
         hx-target=".posts"
-        hx-swap="afterbegin"
         hx-on::after-request="this.reset()"
       >
         <input type="hidden" name="csrf" value="${csrf}">
         <input type="text" name="title" placeholder="Title">
         <textarea name="content" rows="4"></textarea>
         <div class="actions">
+          <div class="errors"></div>
           <button type="submit">create</button>
         </div>
       </form>
       <div class="posts">
-        ${
-          posts
-            ?.map(
-              (p) => `
-        <div class="post">
-          ${p.title ? `<h3>${escapeHTML(p.title)}</h3>` : ""}
-          ${escapeHTML(p.content)}
-          <p class="date">${formatPostDate(p.updated_at)}</p>
-          <a href="#"
-             hx-delete="/posts/${p.id}"
-             hx-confirm="delete this post?"
-             hx-target="closest .post"
-             hx-swap="swap:1s"
-          >
-             delete
-          </a>
-        </div>`
-            )
-            ?.join("\n") || ""
-        }
+        ${posts?.map((p) => postMarkup(p))?.join("\n") || ""}
       </div>
     </div>
   `;
@@ -74,7 +55,7 @@ export default {
   }
 
   form .actions {
-    justify-content: flex-end;
+    justify-content: space-between;
   }
 
   .posts {
@@ -114,6 +95,7 @@ export default {
   }
   `,
   formatPostDate,
+  postMarkup,
 };
 
 function formatPostDate(datetime: string) {
@@ -127,4 +109,18 @@ function formatPostDate(datetime: string) {
   const pd = d.toString().padStart(2, "0");
 
   return `${y}-${pm}-${pd}`;
+}
+
+function postMarkup(post: Post) {
+  return `<div class="post">
+<h3>${escapeHTML(post?.title)}</h3>
+${escapeHTML(post?.content)}
+<p class="date">${escapeHTML(formatPostDate(post?.updated_at ?? ""))}</p>
+<a href="#"
+  hx-delete="/posts/${post?.id}"
+  hx-confirm="delete this post?"
+  hx-target="closest .post">
+  delete
+</a>
+</div>`;
 }

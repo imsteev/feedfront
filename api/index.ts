@@ -73,20 +73,17 @@ export const createPost = async (req: Request) => {
     return new Response("invalid request", { headers: HX_ERRORS_HEADERS });
   }
 
+  if (!title) {
+    return new Response("missing title", { headers: HX_ERRORS_HEADERS });
+  }
+
+  if (!content) {
+    return new Response("missing content", { headers: HX_ERRORS_HEADERS });
+  }
+
   const post = posts.createPost(user.id, content, title);
-  return new Response(`<div class="post">
-    <h3>${escapeHTML(post?.title)}</h3>
-    ${escapeHTML(post?.content)}
-    <p class="date">${escapeHTML(
-      adminView.formatPostDate(post?.updated_at ?? "")
-    )}</p>
-    <a href="#"
-        hx-delete="/posts/${post?.id}"
-        hx-confirm="delete this post?"
-        hx-target="closest .post">
-        delete
-    </a>
-  </div>`);
+
+  return new Response(adminView.postMarkup(post!));
 };
 
 export const deletePost = async (
