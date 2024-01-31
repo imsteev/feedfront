@@ -90,6 +90,22 @@ export function page(props: { html: string; css?: string }) {
           justify-content: center;
         }
 
+        html, input {
+          color: #4D0011;
+        }
+
+        a {
+          color: #627E8B;
+        }
+
+        input {
+          padding: 2px;
+        }
+
+        input, textarea {
+          border-color: #4B443C;
+        }
+
         .page {
           display: flex;
           flex-direction: column;

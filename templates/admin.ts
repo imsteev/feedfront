@@ -6,7 +6,7 @@ export default {
   render({ user, csrf, posts }: { user: User; csrf: string; posts?: Post[] }) {
     return `
     <div class="header">
-      <p style="text-transform: uppercase;">${escapeHTML(user.username)}</p>
+      <h2">trek</h2>
     </div>
     <nav>
       <a href="#" hx-get="/logout">logout</a>
@@ -38,7 +38,9 @@ export default {
           <a href="#"
              hx-delete="/posts/${p.id}"
              hx-confirm="delete this post?"
-             hx-target="closest .post">
+             hx-target="closest .post"
+             hx-swap="swap:1s"
+          >
              delete
           </a>
         </div>`
@@ -75,14 +77,23 @@ export default {
     justify-content: flex-end;
   }
 
+  .posts {
+    margin-top: 32px;
+  }
   .posts > * {
-    margin: 32px 0;
+    margin: 16px 0;
   }
 
   .post .date {
     color: gray;
     margin-top: 4px;
-    font-size: 0.8em;
+    font-size: 0.9em;
+  }
+
+
+  .post.htmx-swapping {
+    opacity: 0;
+    transition: opacity 1s ease-out;
   }
 
   label[for="content"] {
