@@ -1,6 +1,7 @@
 import { db } from "../db";
 
 export type Post = {
+  id: number;
   content: string;
   created_at: string;
   updated_at: string;

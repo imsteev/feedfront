@@ -1,7 +1,10 @@
 type Handler = [
   method: "GET" | "PUT" | "POST" | "PATCH" | "DELETE",
   pattern: string | RegExp,
-  fn: (req: Request) => Response | Promise<Response>
+  fn: (
+    req: Request,
+    params?: Record<string, any>
+  ) => Response | Promise<Response>
 ];
 
 // TODO: nested mux?
@@ -44,10 +47,13 @@ class Mux {
         continue;
       }
       const url = new URL(req.url);
-      if (url.pathname !== handler[1]) {
+      const match = url.pathname.match(handler[1]);
+      console.log(handler[1], match);
+
+      if (!match) {
         continue;
       }
-      return handler[2](req);
+      return handler[2](req, match.groups);
     }
 
     return new Response("bad request", { status: 400 });

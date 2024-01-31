@@ -6,6 +6,7 @@ import {
   logout,
   index,
   createPost,
+  deletePost,
 } from "./api";
 import { Mux } from "./mux";
 
@@ -14,6 +15,7 @@ const mux = new Mux()
   .post("/signup", signup)
   .post("/login", login)
   .post("/posts", createPost)
+  .delete(/\/posts\/(?<id>\d+$)/, deletePost) // ideal: .delete("/posts/(id: )")
   .get("/admin", admin)
   .get("/logout", logout)
   .get("/", index);

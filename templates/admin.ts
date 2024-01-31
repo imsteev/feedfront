@@ -35,6 +35,12 @@ export default {
           ${p.title ? `<h3>${escapeHTML(p.title)}</h3>` : ""}
           ${escapeHTML(p.content)}
           <p class="date">${formatPostDate(p.updated_at)}</p>
+          <a href="#"
+             hx-delete="/posts/${p.id}"
+             hx-confirm="delete this post?"
+             hx-target="closest .post">
+             delete
+          </a>
         </div>`
             )
             ?.join("\n") || ""

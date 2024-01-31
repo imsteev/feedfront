@@ -80,7 +80,33 @@ export const createPost = async (req: Request) => {
     <p class="date">${escapeHTML(
       adminView.formatPostDate(post?.updated_at ?? "")
     )}</p>
+    <a href="#"
+        hx-delete="/posts/${post?.id}"
+        hx-confirm="delete this post?"
+        hx-target="closest .post">
+        delete
+    </a>
   </div>`);
+};
+
+export const deletePost = async (
+  req: Request,
+  pathargs?: Record<string, string>
+) => {
+  const sid = getCookie(req, sessionMgr.SIDKEY);
+  if (!sid) {
+    return expireCookie(req, sessionMgr.SIDKEY);
+  }
+  const user = sessionMgr.accessUser(sid);
+  if (!user) {
+    return expireCookie(req, sessionMgr.SIDKEY);
+  }
+  if (!pathargs) {
+    return new Response("errors");
+  }
+  const postID = parseInt(pathargs["id"]);
+  posts.deletePost(postID);
+  return new Response("");
 };
 
 export const login = async (req: Request) => {
