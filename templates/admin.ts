@@ -62,13 +62,10 @@ export default {
   .posts {
     margin-top: 32px;
   }
-  .posts > * {
-    margin: 16px 0;
+  .post {
+    margin-top: 16px;
   }
 
-  .post {
-    margin-top: 8px;
-  }
 
   .post .date {
     color: gray;

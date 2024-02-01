@@ -3,6 +3,7 @@ export function page(props: { html: string; css?: string }) {
   return `<!DOCTYPE html>
   <html>
     <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta charset="UTF-8" />
       <script
         src="https://unpkg.com/htmx.org@1.9.10"
