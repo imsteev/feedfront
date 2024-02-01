@@ -96,7 +96,7 @@ export function page(props: { html: string; css?: string }) {
         }
 
         a {
-          color: #627E8B;
+          color: #BFCAD0;
         }
 
         input {

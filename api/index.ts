@@ -82,6 +82,32 @@ export const createPost = async (req: Request) => {
   return new Response(adminView.postMarkup(post!));
 };
 
+export const getPost = async (
+  req: Request,
+  pathargs?: Record<string, string>
+) => {
+  const sid = getCookie(req, sessionMgr.SIDKEY);
+  if (!sid) {
+    return expireCookie(req, sessionMgr.SIDKEY);
+  }
+  const user = sessionMgr.accessUser(sid);
+  if (!user) {
+    return expireCookie(req, sessionMgr.SIDKEY);
+  }
+  if (!pathargs) {
+    return new Response("errors");
+  }
+  const postID = parseInt(pathargs["id"]);
+  const post = posts.getPostByID(postID);
+
+  return html(
+    page({
+      html: adminView.render({ csrf: user.session_csrf, user, post }),
+      css: adminView.css,
+    })
+  );
+};
+
 export const deletePost = async (
   req: Request,
   pathargs?: Record<string, string>
@@ -99,7 +125,7 @@ export const deletePost = async (
   }
   const postID = parseInt(pathargs["id"]);
   posts.deletePost(postID);
-  return new Response("");
+  return redirect(req, "/admin");
 };
 
 export const login = async (req: Request) => {

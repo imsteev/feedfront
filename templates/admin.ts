@@ -3,32 +3,29 @@ import { Post } from "../db/posts";
 import { User } from "../db/users";
 
 export default {
-  render({ user, csrf, posts }: { user: User; csrf: string; posts?: Post[] }) {
+  render({
+    user,
+    csrf,
+    posts,
+    post,
+  }: {
+    user: User;
+    csrf: string;
+    posts?: Post[];
+    post?: Post | null;
+  }) {
     return `
     <div class="header">
-      <h2">trek</h2>
+      <h2>trek</h2>
     </div>
     <nav>
       <a href="#" hx-get="/logout">logout</a>
     </nav>
     <div class="main-content">
-      <form
-        id="new-post"
-        hx-post="/posts"
-        hx-target=".posts"
-        hx-swap="afterbegin"
-        hx-on::after-request="this.reset()"
-      >
-        <input type="hidden" name="csrf" value="${csrf}">
-        <input type="text" name="title" placeholder="Title">
-        <textarea name="content" rows="4"></textarea>
-        <div class="actions">
-          <div class="errors"></div>
-          <button type="submit">create</button>
-        </div>
-      </form>
+      ${(posts && formMarkup(csrf)) || ""}
       <div class="posts">
-        ${posts?.map((p) => postMarkup(p))?.join("\n") || ""}
+        ${(posts && posts.map((p) => postMarkup(p)).join("\n")) || ""}
+        ${(post && `${postMarkup(post)}${deletePostButton(post)}`) || ""}
       </div>
     </div>
   `;
@@ -63,13 +60,12 @@ export default {
     margin-top: 32px;
   }
   .post {
-    margin-top: 16px;
+    margin-top: 40px;
   }
 
 
   .post .date {
     color: gray;
-    margin-top: 16px;
     font-size: 0.9em;
   }
 
@@ -102,6 +98,7 @@ export default {
   `,
   formatPostDate,
   postMarkup,
+  deletePostButton,
 };
 
 function formatPostDate(datetime: string) {
@@ -119,15 +116,37 @@ function formatPostDate(datetime: string) {
 
 function postMarkup(post: Post) {
   return `<div class="post">
-<h3>${escapeHTML(post?.title)}</h3>
+<h2>${escapeHTML(post?.title)}</h2>
 <pre>${escapeHTML(post?.content)}</pre>
-<p class="date">${escapeHTML(formatPostDate(post?.updated_at ?? ""))}</p>
-<a href="#"
+<p class="date"><a href="/posts/${post.id}">${escapeHTML(
+    formatPostDate(post?.updated_at ?? "")
+  )}</a></p>
+</div>`;
+}
+
+function deletePostButton(post: Post) {
+  return `<button href="#"
   hx-delete="/posts/${post?.id}"
-  hx-target="closest .post"
-  hx-swap="swap:0.8s"
+  hx-swap="swap:1s"
 >
   delete
-</a>
-</div>`;
+</button>`;
+}
+
+function formMarkup(csrf: string) {
+  return `<form
+  id="new-post"
+  hx-post="/posts"
+  hx-target=".posts"
+  hx-swap="afterbegin"
+  hx-on::after-request="this.reset()"
+>
+  <input type="hidden" name="csrf" value="${csrf}">
+  <input type="text" name="title" placeholder="Title">
+  <textarea name="content" rows="4"></textarea>
+  <div class="actions">
+    <div class="errors"></div>
+    <button type="submit">create</button>
+  </div>
+</form>`;
 }

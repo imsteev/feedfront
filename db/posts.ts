@@ -29,6 +29,13 @@ export default {
       )
       .all({ $u: userID });
   },
+  getPostByID(id: number): Post | null {
+    return db
+      .prepare<Post, any>(
+        `select * from posts where id = $id order by updated_at desc`
+      )
+      .get({ $id: id });
+  },
   deletePost(id: number) {
     db.prepare<Post, any>(`delete from posts where id = $id`).run({ $id: id });
   },
