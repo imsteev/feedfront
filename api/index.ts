@@ -73,10 +73,6 @@ export const createPost = async (req: Request) => {
     return new Response("invalid request", { headers: HX_ERRORS_HEADERS });
   }
 
-  if (!title) {
-    return new Response("missing title", { headers: HX_ERRORS_HEADERS });
-  }
-
   if (!content) {
     return new Response("missing content", { headers: HX_ERRORS_HEADERS });
   }

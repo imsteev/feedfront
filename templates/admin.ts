@@ -115,7 +115,7 @@ function formatPostDate(datetime: string) {
 function postMarkup(post: Post) {
   return `<div class="post">
 <h3>${escapeHTML(post?.title)}</h3>
-${escapeHTML(post?.content)}
+<pre>${escapeHTML(post?.content)}</pre>
 <p class="date">${escapeHTML(formatPostDate(post?.updated_at ?? ""))}</p>
 <a href="#"
   hx-delete="/posts/${post?.id}"
