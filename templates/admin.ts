@@ -66,9 +66,13 @@ export default {
     margin: 16px 0;
   }
 
+  .post {
+    margin-top: 8px;
+  }
+
   .post .date {
     color: gray;
-    margin-top: 4px;
+    margin-top: 16px;
     font-size: 0.9em;
   }
 
