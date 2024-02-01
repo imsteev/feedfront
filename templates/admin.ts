@@ -72,6 +72,10 @@ export default {
     font-size: 0.9em;
   }
 
+  pre {
+    white-space: pre-wrap;
+  }
+
 
   .post.htmx-swapping {
     opacity: 0;
