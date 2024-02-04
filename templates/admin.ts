@@ -31,6 +31,11 @@ export default {
   `;
   },
   css: `
+  .header h2:hover {
+    cursor: pointer;
+  }
+
+
   .main-content {
     margin: 24px 0;
     width: min(100%, 60ch);
@@ -63,16 +68,15 @@ export default {
     margin-top: 40px;
   }
 
-
   .post .date {
     color: gray;
     font-size: 0.9em;
+    margin-top: 8px;
   }
 
   pre {
     white-space: pre-wrap;
   }
-
 
   .post.htmx-swapping {
     opacity: 0;
