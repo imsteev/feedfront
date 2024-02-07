@@ -38,4 +38,6 @@ db.run(`CREATE TABLE IF NOT EXISTS posts (
     title TEXT,
     content TEXT
 )`);
+
+db.run(`CREATE INDEX IF NOT EXISTS posts_user_idx ON posts (user_id)`);
 /* END MIGRATIONS */

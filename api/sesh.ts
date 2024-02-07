@@ -3,7 +3,7 @@ import session from "../db/session";
 import { User } from "../db/users";
 
 const SIDKEY = "id";
-const SESSION_MAX_AGE_SECONDS = 24 * 60 * 60; // 1 day
+const SESSION_MAX_AGE_SECONDS = 5 * 60 * 60; // 5 days
 
 function establishSession(userID: number): {
   cookie: string;
