@@ -24,7 +24,6 @@ const mux = new Mux()
 
 const server = Bun.serve({
   async fetch(req) {
-    console.log(`${req.method} ${req.url}`);
     return mux.handle(req);
   },
 });

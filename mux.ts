@@ -48,7 +48,6 @@ class Mux {
       }
       const url = new URL(req.url);
       const match = url.pathname.match(handler[1]);
-      console.log(handler[1], match);
 
       if (!match) {
         continue;
