@@ -99,6 +99,10 @@ export default {
     resize: none;
     border-radius: 5px;
   }
+
+  button[data-delete] {
+    margin-top: 1rem;
+  }
   `,
   formatPostDate,
   postMarkup,
@@ -130,6 +134,7 @@ function postMarkup(post: Post) {
 
 function deletePostButton(post: Post) {
   return `<button href="#"
+  data-delete
   hx-delete="/posts/${post?.id}"
   hx-swap="swap:1s"
 >
