@@ -29,6 +29,9 @@ export default {
         $expiresAt: expiresAt,
       });
   },
+  deleteStaleSessions() {
+    db.run(`DELETE FROM sessions WHERE expires_at < strftime('%s', 'now')`);
+  },
 };
 
 // Math.round(new Date().getTime() / 1000) + SESSION_MAX_AGE_SECONDS, // seconds since UTC epoch
