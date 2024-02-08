@@ -25,18 +25,21 @@ export default {
   getPosts(userID: number): Post[] {
     return db
       .prepare<Post, any>(
-        `select * from posts where user_id = $u order by updated_at desc`
+        `select * from posts where user_id = $u order by created_at desc`
       )
       .all({ $u: userID });
   },
   getPostByID(id: number): Post | null {
     return db
-      .prepare<Post, any>(
-        `select * from posts where id = $id order by updated_at desc`
-      )
+      .prepare<Post, any>(`select * from posts where id = $id`)
       .get({ $id: id });
   },
   deletePost(id: number) {
     db.prepare<Post, any>(`delete from posts where id = $id`).run({ $id: id });
+  },
+  updatePost(id: number, updates: { title: string; content: string }) {
+    db.prepare<Post, any>(
+      `update posts set title = $title, content = $content, updated_at = CURRENT_TIMESTAMP where id = $id`
+    ).run({ $id: id, $title: updates.title, $content: updates.content });
   },
 };

@@ -8,6 +8,7 @@ import {
   createPost,
   deletePost,
   getPost,
+  updatePost,
 } from "./api";
 import { Mux } from "./mux";
 import session from "./db/session";
@@ -20,8 +21,9 @@ function main() {
     .post("/signup", signup)
     .post("/login", login)
     .post("/posts", createPost)
-    .get(/\/posts\/(?<id>\d+$)/, getPost) // ideal: .delete("/posts/(id: )")
-    .delete(/\/posts\/(?<id>\d+$)/, deletePost) // ideal: .delete("/posts/(id: )")
+    .put(`/posts/(?<id>\\d+$)`, updatePost)
+    .get(`/posts/(?<id>\\d+$)`, getPost) // ideal: .delete("/posts/(id: )")
+    .delete(`/posts/(?<id>\\d+$)`, deletePost) // ideal: .delete("/posts/(id: )")
     .get("/admin", admin)
     .get("/logout", logout)
     .get("/", index);

@@ -108,6 +108,39 @@ export const getPost = async (
   );
 };
 
+export const updatePost = async (
+  req: Request,
+  pathargs?: Record<string, string>
+) => {
+  const sid = getCookie(req, sessionMgr.SIDKEY);
+  if (!sid) {
+    return expireCookie(req, sessionMgr.SIDKEY);
+  }
+  const user = sessionMgr.accessUser(sid);
+  if (!user) {
+    return expireCookie(req, sessionMgr.SIDKEY);
+  }
+  if (!pathargs) {
+    return new Response("errors");
+  }
+
+  const form = await req.formData();
+  const csrf = form.get("csrf")?.toString();
+  const title = form.get("title")?.toString() ?? "";
+  const content = form.get("content")?.toString() ?? "";
+
+  if (csrf !== user.session_csrf) {
+    return new Response("invalid request", { headers: HX_ERRORS_HEADERS });
+  }
+
+  if (!content) {
+    return new Response("missing content", { headers: HX_ERRORS_HEADERS });
+  }
+  const postID = parseInt(pathargs["id"]);
+  posts.updatePost(postID, { title, content });
+  return redirect(req, `/posts/${postID}`);
+};
+
 export const deletePost = async (
   req: Request,
   pathargs?: Record<string, string>

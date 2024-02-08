@@ -16,17 +16,17 @@ export default {
   }) {
     return `
     <div class="header">
-      <h2>trek</h2>
+      <h2 hx-get="/admin" hx-target="body" hx-push-url="true">trek</h2>
     </div>
     <nav>
       <a href="#" hx-get="/logout">logout</a>
     </nav>
     <div class="main-content">
-      ${(posts && formMarkup(csrf)) || ""}
-      <div class="posts">
-        ${(posts && posts.map((p) => postMarkup(p)).join("\n")) || ""}
-        ${(post && `${postMarkup(post)}${deletePostButton(post)}`) || ""}
-      </div>
+    ${posts ? newPostMarkup(csrf) : ""}
+    <div class="posts">
+      ${posts ? `${posts.map((p) => postMarkup(p)).join("\n") || ""}` : ""}
+      ${post ? `${updatePostMarkup(csrf, post)}` : ""}
+    </div>
     </div>
   `;
   },
@@ -58,7 +58,11 @@ export default {
   }
 
   form .actions {
-    justify-content: space-between;
+    justify-content: flex-end;
+  }
+
+  form .actions > * {
+    margin-inline: 4px;
   }
 
   .posts {
@@ -101,7 +105,8 @@ export default {
   }
 
   button[data-delete] {
-    margin-top: 1rem;
+    border: solid 1px red;
+    color: red;
   }
   `,
   formatPostDate,
@@ -127,7 +132,7 @@ function postMarkup(post: Post) {
 <h2>${escapeHTML(post?.title)}</h2>
 <pre>${escapeHTML(post?.content)}</pre>
 <p class="date"><a href="/posts/${post.id}">${escapeHTML(
-    formatPostDate(post?.updated_at ?? "")
+    formatPostDate(post?.created_at ?? "")
   )}</a></p>
 </div>`;
 }
@@ -142,7 +147,7 @@ function deletePostButton(post: Post) {
 </button>`;
 }
 
-function formMarkup(csrf: string) {
+function newPostMarkup(csrf: string) {
   return `<form
   id="new-post"
   hx-post="/posts"
@@ -156,6 +161,30 @@ function formMarkup(csrf: string) {
   <div class="actions">
     <div class="errors"></div>
     <button type="submit">create</button>
+  </div>
+</form>`;
+}
+
+function updatePostMarkup(csrf: string, post: Post) {
+  return `<form
+  id="new-post"
+  hx-put="/posts/${post.id}"
+  hx-target=".posts"
+>
+  <input type="hidden" name="csrf" value="${csrf}">
+  <input type="text" name="title" value="${escapeHTML(post.title)}">
+  <textarea name="content" rows="4">${escapeHTML(post.content)}</textarea>
+  <div class="errors"></div>
+  <div class="actions">
+    <button type="submit">update</button>
+    <button href="#"
+      data-delete
+      hx-delete="/posts/${post.id}"
+      hx-swap="swap:1s"
+      hx-confirm="delete this post?"
+    >
+      delete
+    </button>
   </div>
 </form>`;
 }
