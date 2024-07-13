@@ -157,7 +157,7 @@ function newPostMarkup(csrf: string) {
 >
   <input type="hidden" name="csrf" value="${csrf}">
   <input type="text" name="title" placeholder="Title">
-  <textarea name="content" rows="4"></textarea>
+  <textarea name="content" rows="40"></textarea>
   <div class="actions">
     <div class="errors"></div>
     <button type="submit">create</button>
@@ -173,7 +173,7 @@ function updatePostMarkup(csrf: string, post: Post) {
 >
   <input type="hidden" name="csrf" value="${csrf}">
   <input type="text" name="title" value="${escapeHTML(post.title)}">
-  <textarea name="content" rows="4">${escapeHTML(post.content)}</textarea>
+  <textarea name="content" rows="40">${escapeHTML(post.content)}</textarea>
   <div class="errors"></div>
   <div class="actions">
     <button type="submit">update</button>
